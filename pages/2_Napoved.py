@@ -21,10 +21,10 @@ location_name = get_location_name()
 # JEZIK
 # ════════════════════════════════════════════════════════════
 TEXTS = {
-    "sl": {"page_title": "10-dnevna napoved", "table_title": "📋 Napoved po urah", "caption": "🔄 Podatki se osvežijo vsakih 30 minut • Vir: Open-Meteo", "error_no_data": "Ni podatkov za prikaz.", "error_api": "Napaka pri API klicu", "build_error": "Napaka: zgradi React projekt v Grafi/dist/", "dnevi": ["Pon", "Tor", "Sre", "Čet", "Pet", "Sob", "Ned"], "dnevi_full": ["Ponedeljek", "Torek", "Sreda", "Četrtek", "Petek", "Sobota", "Nedelja"], "h_ura": "Ura", "h_temp": "Temp", "h_padavine": "Padavine", "h_verj": "Verj.", "h_veter": "Veter", "h_sunki": "Sunki V.", "loc_label": "📍 Lokacija", "nav_prev": "← 🌊 Trenutno vreme"},
-    "en": {"page_title": "10-day forecast", "table_title": "📋 Hourly forecast", "caption": "🔄 Data refreshes every 30 minutes • Source: Open-Meteo", "error_no_data": "No data available.", "error_api": "API call error", "build_error": "Error: build React project in Grafi/dist/", "dnevi": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], "dnevi_full": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "h_ura": "Hour", "h_temp": "Temp", "h_padavine": "Precip.", "h_verj": "Prob.", "h_veter": "Wind", "h_sunki": "Gusts", "loc_label": "📍 Location", "nav_prev": "← 🌊 Current weather"},
-    "it": {"page_title": "Previsioni 10 giorni", "table_title": "📋 Previsioni orarie", "caption": "🔄 Dati aggiornati ogni 30 minuti • Fonte: Open-Meteo", "error_no_data": "Nessun dato disponibile.", "error_api": "Errore chiamata API", "build_error": "Errore: compila il progetto React in Grafi/dist/", "dnevi": ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"], "dnevi_full": ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"], "h_ura": "Ora", "h_temp": "Temp", "h_padavine": "Precip.", "h_verj": "Prob.", "h_veter": "Vento", "h_sunki": "Raffiche", "loc_label": "📍 Località", "nav_prev": "← 🌊 Meteo attuale"},
-    "de": {"page_title": "10-Tage-Vorhersage", "table_title": "📋 Stündliche Vorhersage", "caption": "🔄 Daten werden alle 30 Minuten aktualisiert • Quelle: Open-Meteo", "error_no_data": "Keine Daten verfügbar.", "error_api": "API-Fehler", "build_error": "Fehler: React-Projekt in Grafi/dist/ erstellen", "dnevi": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"], "dnevi_full": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "h_ura": "Std.", "h_temp": "Temp", "h_padavine": "Nied.", "h_verj": "Wahr.", "h_veter": "Wind", "h_sunki": "Böen", "loc_label": "📍 Standort", "nav_prev": "← 🌊 Aktuelles Wetter"},
+    "sl": {"page_title": "10-dnevna napoved", "table_title": "📋 Napoved po urah", "caption": "🔄 Podatki se osvežijo vsakih 30 minut • Vir: Open-Meteo", "error_no_data": "Ni podatkov za prikaz.", "error_api": "Napaka pri API klicu", "build_error": "Napaka: zgradi React projekt v Grafi/dist/", "dnevi": ["Pon", "Tor", "Sre", "Čet", "Pet", "Sob", "Ned"], "dnevi_full": ["Ponedeljek", "Torek", "Sreda", "Četrtek", "Petek", "Sobota", "Nedelja"], "h_ura": "Ura", "h_temp": "Temp", "h_padavine": "Padavine", "h_verj": "Verj.", "h_veter": "Veter / Sunki", "h_uv": "UV Max", "loc_label": "📍 Lokacija", "nav_prev": "Poglej še trenutno vreme"},
+    "en": {"page_title": "10-day forecast", "table_title": "📋 Hourly forecast", "caption": "🔄 Data refreshes every 30 minutes • Source: Open-Meteo", "error_no_data": "No data available.", "error_api": "API call error", "build_error": "Error: build React project in Grafi/dist/", "dnevi": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], "dnevi_full": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "h_ura": "Hour", "h_temp": "Temp", "h_padavine": "Precip.", "h_verj": "Prob.", "h_veter": "Wind / Gusts", "h_uv": "UV Max", "loc_label": "📍 Location", "nav_prev": "See also current weather"},
+    "it": {"page_title": "Previsioni 10 giorni", "table_title": "📋 Previsioni orarie", "caption": "🔄 Dati aggiornati ogni 30 minuti • Fonte: Open-Meteo", "error_no_data": "Nessun dato disponibile.", "error_api": "Errore chiamata API", "build_error": "Errore: compila il progetto React in Grafi/dist/", "dnevi": ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"], "dnevi_full": ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"], "h_ura": "Ora", "h_temp": "Temp", "h_padavine": "Precip.", "h_verj": "Prob.", "h_veter": "Vento / Raffiche", "h_uv": "UV Max", "loc_label": "📍 Località", "nav_prev": "Vedi anche meteo attuale"},
+    "de": {"page_title": "10-Tage-Vorhersage", "table_title": "📋 Stündliche Vorhersage", "caption": "🔄 Daten werden alle 30 Minuten aktualisiert • Quelle: Open-Meteo", "error_no_data": "Keine Daten verfügbar.", "error_api": "API-Fehler", "build_error": "Fehler: React-Projekt in Grafi/dist/ erstellen", "dnevi": ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"], "dnevi_full": ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"], "h_ura": "Std.", "h_temp": "Temp", "h_padavine": "Nied.", "h_verj": "Wahr.", "h_veter": "Wind / Böen", "h_uv": "UV Max", "loc_label": "📍 Standort", "nav_prev": "Siehe auch aktuelles Wetter"},
 }
 
 t = TEXTS[lang]
@@ -44,6 +44,28 @@ def kmh_to_knots(kmh):
 def wmo_to_icon(code):
     return WMO_ICONS.get(code, "❓")
 
+def degrees_to_direction(deg):
+    if deg is None: return "❓"
+    directions = [
+        ("N", "⬇️"), ("NE", "↙️"), ("E", "⬅️"), ("SE", "↖️"),
+        ("S", "⬆️"), ("SW", "↗️"), ("W", "➡️"), ("NW", "↘️")
+    ]
+    idx = int((deg + 22.5) % 360 / 45)
+    return f"{directions[idx][1]} {directions[idx][0]}"
+
+def get_temp_color(temp):
+    if temp < 15: return "#2563eb"
+    elif temp < 25: return "#16a34a"
+    elif temp < 32: return "#ea580c"
+    elif temp < 36: return "#dc2626"
+    else: return "#8b00ff"
+
+def get_uv_color(uv):
+    if uv is None or uv < 0.1: return "#64748b"
+    if uv < 3: return "#16a34a"
+    elif uv < 8: return "#eab308"
+    else: return "#dc2626"
+
 def dan_str(datum_str: str) -> str:
     d = datetime.strptime(datum_str, "%Y-%m-%d")
     return f"{DNEVI[d.weekday()]} {d.day}.{d.month}."
@@ -55,10 +77,10 @@ def dan_full(datum_str: str) -> str:
 # ════════════════════════════════════════════════════════════
 # API KLIC
 # ════════════════════════════════════════════════════════════
-@st.cache_data(ttl=1800)
-def get_forecast():
+@st.cache_data(ttl=1800, show_spinner=False)
+def get_forecast(lat, lon):
     try:
-        url = (f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,weather_code&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_direction_10m,weather_code,wind_gusts_10m&timezone=Europe/Ljubljana&forecast_days=10")
+        url = (f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,weather_code,uv_index_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_direction_10m,weather_code,wind_gusts_10m&timezone=Europe/Ljubljana&forecast_days=10")
         return requests.get(url, timeout=15).json()
     except Exception as e:
         st.error(f"{t['error_api']}: {e}")
@@ -109,9 +131,10 @@ def build_chart_html(forecast_data: dict) -> str:
 # ════════════════════════════════════════════════════════════
 big_title = location_name
 st.markdown(f'<div class="big-title">{big_title}</div>', unsafe_allow_html=True)
-# ── Navigacija med zavihki ──
-if st.button(t["nav_prev"], use_container_width=True, type="secondary"):
+st.markdown('<div class="nav-btn-container">', unsafe_allow_html=True)
+if st.button(t["nav_prev"], use_container_width=True, type="secondary", key="nav_prev"):
     st.switch_page("pages/1_Trenutno.py")
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("""
 <style>
@@ -127,6 +150,25 @@ st.markdown("""
     section[data-testid="stSidebar"] .stButton button[kind="primary"]:hover { background-color: #95d5ac !important; border-color: #7ecb97 !important; color: #0B2512 !important; }
     section[data-testid="stSidebar"] .stButton button[kind="secondary"] { background-color: #F4F9F5 !important; border-color: #CBDED1 !important; color: #1E4620 !important; }
     section[data-testid="stSidebar"] .stButton button[kind="secondary"]:hover { background-color: #E8F3EC !important; border-color: #A9DFBF !important; color: #0B2512 !important; }
+    .nav-btn-container .stButton button {
+        background: #dceefb !important;
+        color: #000000 !important;
+        border: 2px solid #7ec8e3 !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        padding: 16px 12px !important;
+        border-radius: 14px !important;
+        box-shadow: 0 4px 14px rgba(126, 200, 227, 0.35) !important;
+        transition: all 0.2s ease !important;
+        margin: 10px 0 !important;
+        width: 100% !important;
+    }
+    .nav-btn-container .stButton button:hover {
+        background: #c5e3f5 !important;
+        border-color: #5ab0d4 !important;
+        box-shadow: 0 6px 20px rgba(90, 176, 212, 0.45) !important;
+        transform: translateY(-2px) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -158,7 +200,7 @@ with st.sidebar:
     st.divider()
     st.caption("🌊 Vremenska postaja • 2025")
 
-data = get_forecast()
+data = get_forecast(LAT, LON)
 if not data or "daily" not in data:
     st.error(t["error_no_data"])
     st.stop()
@@ -168,32 +210,111 @@ st.components.v1.html(html, height=550, scrolling=True)
 st.divider()
 st.subheader(t["table_title"])
 
+# Funkcije za barvanje
+def degrees_to_direction(deg):
+    if deg is None: return "❓"
+    directions = [
+        ("N", "⬇️"), ("NE", "↙️"), ("E", "⬅️"), ("SE", "↖️"),
+        ("S", "⬆️"), ("SW", "↗️"), ("W", "➡️"), ("NW", "↘️")
+    ]
+    idx = int((deg + 22.5) % 360 / 45)
+    return f"{directions[idx][1]} {directions[idx][0]}"
+
+def get_temp_color(temp):
+    if temp < 15: return "#2563eb"
+    elif temp < 25: return "#16a34a"
+    elif temp < 32: return "#ea580c"
+    elif temp < 36: return "#dc2626"
+    else: return "#8b00ff"
+
+def get_uv_color(uv):
+    if uv is None or uv < 0.1: return "#64748b"
+    if uv < 3: return "#16a34a"
+    elif uv < 8: return "#eab308"
+    else: return "#dc2626"
+
+# --- PRENOVLJENA ZANKA ZA TABELO ---
 daily = data["daily"]
 hourly = data["hourly"]
 ST_DNI_URNO = 3
 ure_v_dnevu = [0, 6, 12, 18]
 table_rows = ""
+
 for dan_idx in range(len(daily["time"])):
     ime_dneva = dan_full(daily["time"][dan_idx])
-    table_rows += f"""<tr class="day-header"><td colspan="7">{ime_dneva}</td></tr>"""
-    if dan_idx < ST_DNI_URNO: ure = range(24)
-    else: ure = ure_v_dnevu
+    table_rows += f"""<tr class="day-header"><td colspan="6">{ime_dneva}</td></tr>"""
+    ure = range(24) if dan_idx < ST_DNI_URNO else ure_v_dnevu
+    
     for ura in ure:
         h = dan_idx * 24 + ura
         if h >= len(hourly["time"]): continue
+        
         ica = "🌙" if (ura < 6 or ura >= 20) else wmo_to_icon(hourly["weather_code"][h])
         tmp = hourly["temperature_2m"][h]
         pad = round(hourly["precipitation"][h] or 0, 1)
         prob = hourly["precipitation_probability"][h]
         vet = kmh_to_knots(hourly["wind_speed_10m"][h])
         sunki = kmh_to_knots(hourly["wind_gusts_10m"][h]) if "wind_gusts_10m" in hourly else "-"
+        
+        smer_deg = hourly["wind_direction_10m"][h] if "wind_direction_10m" in hourly else None
+        smer_str = degrees_to_direction(smer_deg)
+        
+        wind_str = f"{vet} / {sunki} kt {smer_str}" if sunki != "-" else f"{vet} kt {smer_str}"
+        
+        padavine_skupaj = f"{pad} mm ({prob}%)" if pad > 0 else f"- ({prob}%)"
+        
+        t_color = get_temp_color(tmp)
+        
+        # UV samo podnevi
+        if 6 <= ura <= 18:
+            uv = daily["uv_index_max"][dan_idx]
+            uv_color = get_uv_color(uv)
+            uv_str = f'<span style="color: {uv_color};">{uv}</span>'
+        else:
+            uv_str = "—"
+        
         nocni = "class=\"night\"" if ura < 6 or ura >= 20 else ""
-        table_rows += f"""<tr {nocni}><td class="ura">{ura:02d}:00</td><td class="icon">{ica}</td><td class="temp">{tmp}°</td><td class="precip">{pad} mm</td><td class="prob">{prob}%</td><td class="wind">{vet} kt</td><td class="gusts">{sunki} kt</td></tr>"""
+        table_rows += f"""<tr {nocni}>
+            <td class="ura">{ura:02d}:00</td>
+            <td class="icon">{ica}</td>
+            <td class="temp" style="color: {t_color};">{tmp}°</td>
+            <td class="precip">{padavine_skupaj}</td>
+            <td class="wind">{wind_str}</td>
+            <td class="uv">{uv_str}</td>
+        </tr>"""
 
+# Posodobljen HTML in CSS
 table_html = f"""<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
 <table cellspacing="0">
-<thead><tr><th>{t['h_ura']}</th><th style="width:36px;"></th><th>{t['h_temp']}</th><th>{t['h_padavine']}</th><th>{t['h_verj']}</th><th>{t['h_veter']}</th><th>{t['h_sunki']}</th></tr></thead>
+<thead><tr>
+    <th>{t['h_ura']}</th>
+    <th style="width:36px;"></th>
+    <th>{t['h_temp']}</th>
+    <th>{t['h_padavine']} (% verj.)</th>
+    <th>{t['h_veter']}</th>
+    <th>{t['h_uv']}</th>
+</tr></thead>
 <tbody>{table_rows}</tbody></table></div>
-<style>table{{width:100%;border-collapse:collapse;font-family:sans-serif;font-size:14px;background:#f8f9fa;border-radius:10px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.06)}}thead tr{{background:#0d6efd;color:#fff}}th{{padding:10px 8px;text-align:center;font-weight:700;font-size:12px;letter-spacing:0.3px}}td{{padding:7px 8px;text-align:center;border-bottom:1px solid #e9ecef;font-size:14px;color:#333}}td:first-child{{text-align:left;padding-left:14px}}.day-header td{{background:#e8f4fd;color:#000;font-weight:700;font-size:15px;text-align:left;padding:10px 14px;border-bottom:2px solid #0d6efd}}.night td{{background:#f1f3f5}}.ura{{font-weight:600;color:#0d6efd;font-size:13px}}.icon{{font-size:18px}}.temp{{font-weight:700;font-size:16px;color:#212529}}.precip,.prob,.wind,.gusts{{font-weight:600}}.precip{{color:#2563eb}}.prob{{color:#64748b}}.wind,.gusts{{color:#7c3aed}}@media(max-width:480px){{table{{font-size:12px}}td{{padding:5px 4px;font-size:12px}}th{{padding:7px 4px;font-size:10px}}.temp{{font-size:13px}}.icon{{font-size:15px}}}}</style>"""
+<style>
+    table{{width:100%;border-collapse:collapse;font-family:sans-serif;font-size:14px;background:#f8f9fa;border-radius:10px;overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,0.06)}}
+    thead tr{{background:#0d6efd;color:#fff}}
+    th{{padding:10px 8px;text-align:center;font-weight:700;font-size:12px;letter-spacing:0.3px}}
+    td{{padding:7px 8px;text-align:center;border-bottom:1px solid #e9ecef;font-size:14px;color:#333}}
+    td:first-child{{text-align:left;padding-left:14px}}
+    .day-header td{{background:#e8f4fd;color:#000;font-weight:700;font-size:15px;text-align:left;padding:10px 14px;border-bottom:2px solid #0d6efd}}
+    .night td{{background:#f1f3f5}}
+    .ura{{font-weight:600;color:#0d6efd;font-size:13px}}
+    .icon{{font-size:18px}}
+    .temp{{font-weight:700;font-size:16px}}
+    .precip{{color:#2563eb; font-weight:600}}
+    .wind{{color:#1e3a8a; font-weight:600}}
+    @media(max-width:480px){{
+        table{{font-size:11px}}
+        td{{padding:6px 4px;font-size:11px}}
+        th{{padding:8px 4px;font-size:9px}}
+        .temp{{font-size:12px}}
+        .icon{{font-size:14px}}
+    }}
+</style>"""
 st.markdown(table_html, unsafe_allow_html=True)
 st.caption(t["caption"])

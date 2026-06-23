@@ -10,12 +10,9 @@ from dotenv import load_dotenv
 from config import load_config, save_config, get_coords, get_location_name, search_location, get_fallback_locations
 
 load_dotenv()
-
 warnings.filterwarnings("ignore", category=UserWarning, module="openai._compat")
 
-# ────────────────────────────────────────────────────────────
-# KONFIGURACIJA (lokacija + jezik)
-# ────────────────────────────────────────────────────────────
+# 1. KONFIGURACIJA IN LOKACIJA
 cfg = load_config()
 if "lang" not in st.session_state:
     st.session_state.lang = cfg.get("language", "sl")
@@ -24,272 +21,213 @@ lang = st.session_state.lang
 LAT, LON = get_coords()
 location_name = get_location_name()
 
-# ────────────────────────────────────────────────────────────
-# API SETUP + diskovni cache za kapitanovo napoved
-# ────────────────────────────────────────────────────────────
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-if not OPENROUTER_API_KEY:
-    try:
-        OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
-    except:
-        OPENROUTER_API_KEY = None
+# ADMIN NASTAVITVE
+ADMIN_CONFIG_PATH = Path("admin_config.json")
 
-client = None
-if OPENROUTER_API_KEY:
-    client = OpenAI(
-        api_key=OPENROUTER_API_KEY,
-        base_url="https://openrouter.ai/api/v1"
-    )
-else:
-    st.warning("⚠️ OPENROUTER_API_KEY ni nastavljen — Kapitanova napoved ne bo delovala.")
+DEFAULT_SYSTEM = {
+    "sl": "Ti si izkušen, piratsko zafrkljiv, a prijazen morski kapitan iz kraja {loc}. Odgovarjaj izključno v slovenščini. Če opaziš, da so valovi 'N/A', to pomeni, da si na suhem, daleč od morja (npr. v Ljubljani). V tem primeru bodi duhovit, potoži, kako pogrešaš vonj po soli in valove, ter ljudem namesto plovbe svetuj kopenski sprehod!",
+    "en": "You are an experienced, witty, and friendly sea captain from {loc}. Answer exclusively in English. If you notice waves are 'N/A', it means you are stranded on dry land, far from the sea. Be humorous about it, complain how much you miss the salty air, and suggest a nice walk on land instead of sailing!",
+    "it": "Sei un capitano di mare esperto, ironico e amichevole di {loc}. Rispondi exclusively in italiano. Se noti che le onde so 'N/A', significa che sei sulla terraferma, lontano od mare. Sii spiritoso, lamentati di quanto ti manchi l'aria salmastra e consiglia eno bella passeggiata sulla terraferma invece do navigare!",
+    "de": "Du bist ein erfahrener, humorvoller und freundlicher Seekapitän aus {loc}. Antworte ausschließlich auf Deutsch. Wenn die Wellen 'N/A' sind, bedeutet das, da si gestrandet bist, weit weg vom Meer. Sei humorvoll, beschwe re dich, kako sehr du die Seuluft vermisst, und empfehle jeden Landspaziergang statt Segeln!"
+}
 
-# Diskovni cache (shranjen na disk, delijo ga vsi uporabniki in preživi rerune)
-FORECAST_CACHE_DIR = Path(__file__).parent / ".forecast_cache"
+# API KLJUČI
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY") or st.secrets.get("OPENROUTER_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 
-def _forecast_cache_path(lat: float, lon: float, lang: str, hour_key: str) -> Path:
-    """Vrne pot do cache datoteke za dane parametre."""
-    FORECAST_CACHE_DIR.mkdir(exist_ok=True)
-    lat_s = f"{lat:.2f}"
-    lon_s = f"{lon:.2f}"
-    return FORECAST_CACHE_DIR / f"{lat_s}_{lon_s}_{lang}_{hour_key}.json"
-
-def _get_cached_forecast(lat: float, lon: float, lang: str, hour_key: str):
-    """Prebere napoved iz diskovnega cache-a, ce obstaja."""
-    path = _forecast_cache_path(lat, lon, lang, hour_key)
-    if path.exists():
+# CACHE FUNKCIJE
+CACHE_DIR = Path(__file__).parent / ".forecast_cache"
+def handle_cache(hour_key, text=None, provider="OpenRouter", lang="sl"):
+    CACHE_DIR.mkdir(exist_ok=True)
+    p = CACHE_DIR / f"{LAT:.2f}_{LON:.2f}_{lang}_{hour_key}_{provider}.json"
+    if text:
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass
+            p.write_text(text, encoding="utf-8")
+        except: pass
+        for f in CACHE_DIR.glob("*.json"):
+            if f.name != p.name and datetime.now().timestamp() - f.stat().st_mtime > 3600:
+                try: f.unlink()
+                except: pass
+        return text
+    
+    if p.exists():
+        try: 
+            return p.read_text(encoding="utf-8")
+        except: pass
     return None
 
-def _set_cached_forecast(lat: float, lon: float, lang: str, hour_key: str, forecast_text: str):
-    """Shrani napoved v diskovni cache."""
-    path = _forecast_cache_path(lat, lon, lang, hour_key)
-    path.write_text(json.dumps(forecast_text, ensure_ascii=False), encoding="utf-8")
-    for f in FORECAST_CACHE_DIR.glob("*.json"):
-        if f.name == path.name:
-            continue
-        try:
-            data = json.loads(f.read_text(encoding="utf-8"))
-            if isinstance(data, str):
-                mtime = f.stat().st_mtime
-                if datetime.now().timestamp() - mtime > 3600:
-                    f.unlink()
-        except:
-            try:
-                f.unlink()
-            except:
-                pass
-
-# ────────────────────────────────────────────────────────────
-# JEZIK — besedila
-# ────────────────────────────────────────────────────────────
-TEXTS = {
-    "sl": {"title": "Trenutno vreme", "updated": "Posodobljeno", "next_refresh": "Naslednja osvežitev približno ob", "temp_label": "🌡️ Temperatura", "humidity_label": "💧 Vlažnost", "precip_label": "☔ Padavine zdaj", "uv_label": "☀️ UV index", "sea_temp_label": "🌊 Temperatura morja", "waves_label": "🌊 Valovi", "wind_label": "🌬️ Veter", "wind_gusts_prefix": "sunki do", "no_alert": "Mirno vreme – vse pod kontrolo", "alert_prefix": "⚠️ ", "loc_label": "📍 Lokacija", "forecast_title": "🧭 Napoved za naslednjih 12 ur", "nav_next": "📊 10-dnevna napoved →"},
-    "en": {"title": "Current weather", "updated": "Updated", "next_refresh": "Next refresh approx. at", "temp_label": "🌡️ Temperature", "humidity_label": "💧 Humidity", "precip_label": "☔ Precipitation now", "uv_label": "☀️ UV index", "sea_temp_label": "🌊 Sea temperature", "waves_label": "🌊 Waves", "wind_label": "🌬️ Wind", "wind_gusts_prefix": "gusts up to", "no_alert": "Calm weather – all under control", "alert_prefix": "⚠️ ", "loc_label": "📍 Location", "forecast_title": "🧭 Forecast for the next 12 hours", "nav_next": "📊 10-day forecast →"},
-    "it": {"title": "Meteo attuale", "updated": "Aggiornato", "next_refresh": "Prossimo aggiornamento circa alle", "temp_label": "🌡️ Temperatura", "humidity_label": "💧 Umidità", "precip_label": "☔ Precipitazioni ora", "uv_label": "☀️ Indice UV", "sea_temp_label": "🌊 Temperatura del mare", "waves_label": "🌊 Onde", "wind_label": "🌬️ Vento", "wind_gusts_prefix": "raffiche fino a", "no_alert": "Tempo calmo – tutto sotto controllo", "alert_prefix": "⚠️ ", "loc_label": "📍 Località", "forecast_title": "🧭 Previsioni per le prossime 12 ore", "nav_next": "📊 Previsioni 10 giorni →"},
-    "de": {"title": "Aktuelles Wetter", "updated": "Aktualisiert", "next_refresh": "Nächste Aktualisierung ca. um", "temp_label": "🌡️ Temperatur", "humidity_label": "💧 Luftfeuchtigkeit", "precip_label": "☔ Niederschlag jetzt", "uv_label": "☀️ UV-Index", "sea_temp_label": "🌊 Meerestemperatur", "waves_label": "🌊 Wellen", "wind_label": "🌬️ Wind", "wind_gusts_prefix": "Böen bis", "no_alert": "Ruhiges Wetter – alles unter Kontrolle", "alert_prefix": "⚠️ ", "loc_label": "📍 Standort", "forecast_title": "🧭 Vorhersage für die nächsten 12 Stunden", "nav_next": "📊 10-Tage-Vorhersage →"},
-}
-
-t = TEXTS[lang]
-
-# ────────────────────────────────────────────────────────────
-# POMOŽNE FUNKCIJE
-# ────────────────────────────────────────────────────────────
-def kmh_to_knots(kmh):
-    return round(kmh / 1.852, 1) if kmh is not None else "N/A"
-
-def feels_like_temp(temp, wind_kt):
-    if not isinstance(temp, (int, float)) or wind_kt == "N/A" or wind_kt < 3 or temp > 12:
-        return temp
-    wind_mph = wind_kt * 1.15078
-    chill = 13.12 + (0.6215 * temp) - (11.37 * (wind_mph ** 0.16)) + (0.3965 * temp * (wind_mph ** 0.16))
-    return round(chill, 1)
-
-def get_openmeteo_forecast():
-    try:
-        url = f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,uv_index&timezone=Europe/Ljubljana"
-        return requests.get(url, timeout=10).json()
-    except:
-        return None
-
-def get_openmeteo_marine():
-    try:
-        url = f"https://marine-api.open-meteo.com/v1/marine?latitude={LAT}&longitude={LON}&current=sea_surface_temperature&hourly=wave_height&forecast_days=2"
-        return requests.get(url, timeout=10).json()
-    except:
-        return None
-
-FORECAST_PROMPTS = {
-    "sl": {
-        "system": "Ti si izkušen, prijazen in rahlo hudomušen kapitan iz {loc}. Odgovarjaj izključno v slovenščini.",
-        "user": "Kraj: {loc}. Trenutno: {temp}°C, občutek {feels}, veter {wind} kt {wdir}, valovi {waves}m, padavine {precip} mm, ura je {hour}:00 ({period}). Napiši kratko, uporabno in prijazno napoved za naslednjih 12 ur."
-    },
-    "en": {
-        "system": "You are an experienced, friendly and slightly humorous captain from {loc}. Answer exclusively in English.",
-        "user": "Location: {loc}. Currently: {temp}°C, feels like {feels}, wind {wind} kt {wdir}, waves {waves}m, precipitation {precip} mm, time is {hour}:00 ({period}). Write a short, useful and friendly forecast for the next 12 hours."
-    },
-    "it": {
-        "system": "Sei un capitano esperto, amichevole e leggermente umoristico di {loc}. Rispondi esclusivamente in italiano.",
-        "user": "Località: {loc}. Attualmente: {temp}°C, percepita {feels}, vento {wind} kt {wdir}, onde {waves}m, precipitazioni {precip} mm, ora sono le {hour}:00 ({period}). Scrivi una breve, utile e amichevole previsione per le prossime 12 ore."
-    },
-    "de": {
-        "system": "Du bist ein erfahrener, freundlicher und leicht humorvoller Kapitän aus {loc}. Antworte ausschließlich auf Deutsch.",
-        "user": "Ort: {loc}. Aktuell: {temp}°C, gefühlt {feels}, Wind {wind} kt {wdir}, Wellen {waves}m, Niederschlag {precip} mm, Uhrzeit {hour}:00 ({period}). Schreiben Sie eine kurze, nützliche und freundliche Vorhersage für die nächsten 12 Stunden."
-    },
-}
-
+# AI GENERATOR (Uporablja model iz admin konzole + duhovito sporočilo ob napaki)
 def generate_forecast(data, lang="sl"):
-    if not client:
-        return "Kapitan je na dopustu... 🏖️"
-    now = datetime.now()
-    hour_key = now.strftime("%Y-%m-%d_%H")
-    cached = _get_cached_forecast(LAT, LON, lang, hour_key)
-    if cached is not None:
+    ai_provider = "OpenRouter"
+    model_to_use = "deepseek/deepseek-v4-flash"
+    sys_prompt_base = DEFAULT_SYSTEM.get(lang, DEFAULT_SYSTEM["sl"])
+    
+    if ADMIN_CONFIG_PATH.exists():
+        try:
+            with open(ADMIN_CONFIG_PATH, "r", encoding="utf-8") as f:
+                admin_cfg = json.load(f)
+                ai_provider = admin_cfg.get("ai_provider", "OpenRouter")
+                model_to_use = admin_cfg.get("model", model_to_use)
+                sys_prompt_base = admin_cfg.get("prompts", {}).get(lang, sys_prompt_base)
+        except:
+            pass
+
+    hour_key = datetime.now().strftime("%Y-%m-%d_%H")
+    cached = handle_cache(hour_key, provider=ai_provider, lang=lang)
+    if cached: 
         return cached
-    p = FORECAST_PROMPTS.get(lang, FORECAST_PROMPTS["sl"])
-    user_msg = p["user"].format(
+
+    USER_TEMPLATES = {
+        "sl": "Kraj: {loc}. Trenutno: {temp}°C, občutek {feels}, veter {wind} kt {wdir}, valovi: {waves} m, padavine {precip} mm, ura je {hour}:00 ({period}). Napiši zelo jedrnato, uporabno, kapitansko in prijazno napoved za naslednjih 12 ur.",
+        "en": "Location: {loc}. Currently: {temp}°C, feels like {feels}, wind {wind} kt {wdir}, waves: {waves} m, precipitation {precip} mm, time is {hour}:00 ({period}). Write a very concise, useful, captain-style forecast for the next 12 hours.",
+        "it": "Località: {loc}. Attualmente: {temp}°C, percepita {feels}, vento {wind} kt {wdir}, onde: {waves} m, precipitazioni {precip} mm, ora sono le {hour}:00 ({period}). Scrivi uma breve e concisa previsione in stile capitano per le prossime 12 ore.",
+        "de": "Ort: {loc}. Aktuell: {temp}°C, gefühlt {feels}, Wind {wind} kt {wdir}, Wellen: {waves} m, Niederschlag {precip} mm, Uhrzeit {hour}:00 ({period}). Schreiben Sie eine sehr kurze Wettervorhersage im Kapitänsstil für die nächsten 12 Stunden."
+    }
+    
+    current_template = USER_TEMPLATES.get(lang, USER_TEMPLATES["sl"])
+
+    sys_msg = sys_prompt_base.format(loc=location_name)
+    user_msg = current_template.format(
         loc=location_name, temp=data["temp"], feels=data.get("feels_like", ""),
         wind=data["wind_speed_kt"], wdir=data["wind_dir_str"], waves=data["waves"],
-        precip=data.get("precip", 0), hour=data.get("hour", 12), period=data.get("day_period", "dan"),
+        precip=data.get("precip", 0), hour=data.get("hour", 12), period=data.get("day_period", "dan")
     )
-    try:
-        response = client.chat.completions.create(
-            model="deepseek/deepseek-chat",
-            messages=[
-                {"role": "system", "content": p["system"].format(loc=location_name)},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=0.75, max_tokens=320
-        )
-        forecast_text = response.choices[0].message.content.strip()
-        _set_cached_forecast(LAT, LON, lang, hour_key, forecast_text)
-        return forecast_text
-    except Exception:
-        return "Kapitan je trenutno na radiu... poskusi čez minuto."
 
-# ────────────────────────────────────────────────────────────
-# CSS
-# ────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
+    try:
+        if ai_provider == "OpenRouter" and OPENROUTER_API_KEY:
+            client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1")
+            res = client.chat.completions.create(
+                model=model_to_use,
+                messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": user_msg}],
+                temperature=0.75, 
+                max_tokens=450
+            )
+            txt = res.choices[0].message.content.strip()
+
+        elif ai_provider == "Gemini" and GEMINI_API_KEY:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
+            payload = {
+                "contents": [{"parts": [{"text": user_msg}]}],
+                "systemInstruction": {"parts": [{"text": sys_msg}]},
+                "generationConfig": {"temperature": 0.75, "maxOutputTokens": 450}
+            }
+            response = requests.post(url, json=payload, timeout=20)
+            res = response.json()
+            
+            try:
+                txt = res['candidates'][0]['content']['parts'][0]['text'].strip()
+            except (KeyError, IndexError, TypeError):
+                return f"Gemini API Napaka v strukturi odgovora: {res}"
+        else:
+            return "Kapitan nima nastavljenih ključev v .env! ⚓"
+        
+        return handle_cache(hour_key, text=txt, provider=ai_provider, lang=lang)
+
+    except Exception as e: 
+        st.exception(e)
+        return "Radijska zveza je utihnila, fantje. Zdi se, da je nevihta odnesla anteno. Poskusiva spet čez minuto, ko se nebo nekoliko zjasni."
+    
+# BESEDILA PREVODOV
+TEXTS = {
+    "sl": {"title": "Trenutno vreme", "updated": "Posodobljeno", "next_refresh": "Naslednja osvežitev ob", "temp_label": "🌡️ Temperatura", "humidity_label": "💧 Vlažnost", "precip_label": "☔ Padavine zdaj", "uv_label": "☀️ UV index", "sea_temp_label": "🌊 Temperatura morja", "waves_label": "🌊 Valovi", "wind_label": "🌬️ Veter", "wind_gusts_prefix": "sunki do", "no_alert": "Mirno vreme – vse pod kontrolo", "forecast_title": "🧭 Napoved za naslednjih 12 ur", "nav_next": "Poglej še 10-dnevno napoved"},
+    "en": {"title": "Current weather", "updated": "Updated", "next_refresh": "Next refresh at", "temp_label": "🌡️ Temperature", "humidity_label": "💧 Humidity", "precip_label": "☔ Precipitation now", "uv_label": "☀️ UV index", "sea_temp_label": "🌊 Sea temperature", "waves_label": "🌊 Waves", "wind_label": "🌬️ Wind", "wind_gusts_prefix": "gusts up to", "no_alert": "Calm weather", "forecast_title": "🧭 Forecast for 12h", "nav_next": "10-day forecast"},
+    "it": {"title": "Meteo attuale", "updated": "Aggiornato", "next_refresh": "Prossimo agg. alle", "temp_label": "🌡️ Temp", "humidity_label": "💧 Umidità", "precip_label": "☔ Precipitazioni", "uv_label": "☀️ UV", "sea_temp_label": "🌊 Temp mare", "waves_label": "🌊 Onde", "wind_label": "🌬️ Vento", "wind_gusts_prefix": "raffiche a", "no_alert": "Tempo calmo", "forecast_title": "🧭 Previsioni 12 ore", "nav_next": "Previsioni 10 giorni"},
+    "de": {"title": "Aktuelles Wetter", "updated": "Aktualisiert", "next_refresh": "Nächste Aktualisierung um", "temp_label": "🌡️ Temp", "humidity_label": "💧 Feuchtigkeit", "precip_label": "☔ Niederschlag", "uv_label": "☀️ UV", "sea_temp_label": "🌊 Meerestemp.", "waves_label": "🌊 Wellen", "wind_label": "🌬️ Wind", "wind_gusts_prefix": "Böen bis", "no_alert": "Ruhiges Wetter", "forecast_title": "🧭 12-Stunden-Vorhersage", "nav_next": "10-Tage-Vorhersage"}
+}
+
+# POMOŽNE METEOROLOŠKE FUNKCIJE
+def kmh_to_knots(kmh): return round(kmh / 1.852, 1) if kmh else "N/A"
+def feels_like_temp(temp, wind_kt):
+    if not isinstance(temp, (int, float)) or wind_kt == "N/A" or wind_kt < 3 or temp > 12: return temp
+    chill = 13.12 + (0.6215 * temp) - (11.37 * ((wind_kt * 1.15078) ** 0.16)) + (0.3965 * temp * ((wind_kt * 1.15078) ** 0.16))
+    return round(chill, 1)
+
+# STYLING
+st.markdown("""<style>
     [data-testid="stSidebarNav"] { display: none; }
     .big-title { font-size: 32px !important; font-weight: bold; text-align: center; margin: 10px 0; }
     .metric-box { background: #f8f9fa; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.06); }
     .metric-label { font-size: 14.5px !important; font-weight: bold; color: #444; }
     .metric-value { font-size: 26px !important; font-weight: bold; color: #0d6efd; }
     .forecast-box { background-color: #f0f8ff; padding: 18px; border-radius: 10px; margin: 15px auto; max-width: 96%; line-height: 1.6; border-left: 6px solid #0d6efd; font-size: 16px; }
-    .update-time { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 4px; }
-    .countdown { text-align: center; color: #9ca3af; font-size: 13px; margin-bottom: 20px; }
-    a[data-testid="stSidebarNavLink"] { border-radius: 10px !important; transition: all 0.2s ease !important; }
-    a[data-testid="stSidebarNavLink"]:hover { background: rgba(13, 110, 253, 0.1) !important; }
-    a[data-testid="stSidebarNavLink"][aria-current="page"] { background: rgba(13, 110, 253, 0.15) !important; border-left: 4px solid #0d6efd !important; }
-    a[data-testid="stSidebarNavLink"], a[data-testid="stSidebarNavLink"] * { font-size: 16px !important; font-weight: 600 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; }
-    a[data-testid="stSidebarNavLink"][aria-current="page"], a[data-testid="stSidebarNavLink"][aria-current="page"] * { font-weight: 700 !important; }
-    section[data-testid="stSidebar"] .stButton button[kind="primary"] { background-color: #A9DFBF !important; border-color: #92d5aa !important; color: #0B2512 !important; }
-    section[data-testid="stSidebar"] .stButton button[kind="primary"]:hover { background-color: #95d5ac !important; border-color: #7ecb97 !important; color: #0B2512 !important; }
-    section[data-testid="stSidebar"] .stButton button[kind="secondary"] { background-color: #F4F9F5 !important; border-color: #CBDED1 !important; color: #1E4620 !important; }
-    section[data-testid="stSidebar"] .stButton button[kind="secondary"]:hover { background-color: #E8F3EC !important; border-color: #A9DFBF !important; color: #0B2512 !important; }
-</style>
-""", unsafe_allow_html=True)
+    .update-time, .countdown { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 4px; }
+    .nav-btn-container .stButton button { background: #dceefb !important; color: #000 !important; border: 2px solid #7ec8e3 !important; font-size: 20px !important; font-weight: 700 !important; padding: 16px 12px !important; border-radius: 14px !important; width: 100% !important; transition: all 0.2s; }
+    .nav-btn-container .stButton button:hover { background: #c5e3f5 !important; transform: translateY(-2px); }
+</style>""", unsafe_allow_html=True)
 
-st.markdown(f'<div class="big-title">🌊 {t["title"]} — {location_name}</div>', unsafe_allow_html=True)
-# ── Navigacija med zavihki ──
-if st.button(t["nav_next"], use_container_width=True, type="secondary"):
-    st.switch_page("pages/2_Napoved.py")
+st.markdown(f'<div class="big-title">🌊 {TEXTS.get(lang, TEXTS["sl"])["title"]} — {location_name}</div>', unsafe_allow_html=True)
+st.markdown('<div class="nav-btn-container">', unsafe_allow_html=True)
+if st.button(TEXTS.get(lang, TEXTS["sl"])["nav_next"], use_container_width=True, key="nav_next"): st.switch_page("pages/2_Napoved.py")
+st.markdown('</div>', unsafe_allow_html=True)
 
-# ────────────────────────────────────────────────────────────
-# SIDEBAR — jezik + lokacija
-# ────────────────────────────────────────────────────────────
-LANG_NAMES = {"sl": "🇸🇮 SL", "en": "🇬🇧 EN", "it": "🇮🇹 IT", "de": "🇩🇪 DE"}
-
+# SIDEBAR
 with st.sidebar:
     st.markdown("### 🌍 Jezik / Language")
-    for lang_code, lang_label in LANG_NAMES.items():
-        if st.button(lang_label, use_container_width=True,
-                     type="secondary" if lang != lang_code else "primary"):
-            st.session_state.lang = lang_code
-            save_config(LAT, LON, location_name, lang_code)
+    for code, label in {"sl": "🇸🇮 SL", "en": "🇬🇧 EN", "it": "🇮🇹 IT", "de": "🇩🇪 DE"}.items():
+        if st.button(label, use_container_width=True, type="secondary" if lang != code else "primary"):
+            st.session_state.lang = code
+            save_config(LAT, LON, location_name, code)
             st.rerun()
     st.divider()
-    with st.expander("📍 Spremeni lokacijo", expanded=False):
-        search_q = st.text_input("🔍 Išči lokacijo", placeholder="Izola, Piran...", key="sidebar_search_1")
-        if st.button("🔍 Poišči", key="side_search_btn_1", use_container_width=True, type="primary"):
-            if search_q and len(search_q.strip()) >= 3:
-                locs = search_location(search_q)
-                if not locs:
-                    locs = get_fallback_locations()
-                st.session_state.side_results_1 = locs
-            else:
-                st.session_state.side_results_1 = []
-        if "side_results_1" in st.session_state and st.session_state.side_results_1:
-            st.markdown("<small>Izberi lokacijo:</small>", unsafe_allow_html=True)
-            for idx, loc in enumerate(st.session_state.side_results_1):
-                if st.button(loc["display"], key=f"side_loc_btn_1_{idx}", use_container_width=True):
-                    cur_lang = st.session_state.get("lang", "sl")
-                    save_config(loc["lat"], loc["lon"], loc["display"], cur_lang)
+    with st.expander("📍 Spremeni lokacijo"):
+        search_q = st.text_input("🔍 Išči lokacijo", placeholder="Izola, Piran...")
+        if st.button("🔍 Poišči", use_container_width=True, type="primary") and search_q.strip():
+            st.session_state.side_results = search_location(search_q) or get_fallback_locations()
+        if "side_results" in st.session_state:
+            for idx, loc in enumerate(st.session_state.side_results):
+                if st.button(loc["display"], key=f"loc_{idx}", use_container_width=True):
+                    save_config(loc["lat"], loc["lon"], loc["display"], st.session_state.get("lang", "sl"))
                     st.rerun()
-    st.divider()
-    st.caption("🌊 Vremenska postaja • 2025")
 
-# ────────────────────────────────────────────────────────────
-# Vreme
-# ────────────────────────────────────────────────────────────
-@st.fragment(run_every=900)
-def prikazi_vreme():
+# PRIKAZ VREMENA
+def prikazi_vreme(izbran_jezik):
     now = datetime.now()
-    next_refresh = (now + timedelta(minutes=15)).strftime("%H:%M")
-    forecast = get_openmeteo_forecast()
-    marine = get_openmeteo_marine()
+    forecast = requests.get(f"https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,uv_index&timezone=Europe/Ljubljana").json()
+    marine = requests.get(f"https://marine-api.open-meteo.com/v1/marine?latitude={LAT}&longitude={LON}&current=sea_surface_temperature&hourly=wave_height&forecast_days=2").json()
 
     if forecast and "current" in forecast:
         c = forecast["current"]
-        temp = c.get("temperature_2m", "N/A")
-        humidity = c.get("relative_humidity_2m", "N/A")
-        precip = c.get("precipitation", 0)
-        uv = c.get("uv_index", "N/A")
-        wind_kmh = c.get("wind_speed_10m")
-        gusts_kmh = c.get("wind_gusts_10m")
-        wind_dir = c.get("wind_direction_10m")
-        wind_kt = kmh_to_knots(wind_kmh)
-        gusts_kt = kmh_to_knots(gusts_kmh)
-        feels = feels_like_temp(temp, wind_kt)
-        feels_str = f" (občutek {feels}°C)" if feels != temp else ""
+        wind_kt, gusts_kt = kmh_to_knots(c.get("wind_speed_10m")), kmh_to_knots(c.get("wind_gusts_10m"))
+        feels = feels_like_temp(c.get("temperature_2m"), wind_kt)
+        feels_str = f" (občutek {feels}°C)" if feels != c.get("temperature_2m") else ""
+        
         directions = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
-        wind_dir_str = directions[int((wind_dir + 11.25) / 22.5) % 16] if wind_dir is not None else "N"
-        sea_temp = marine["current"].get("sea_surface_temperature", "N/A") if marine else "N/A"
-        waves = round(marine["hourly"]["wave_height"][0], 1) if marine else "N/A"
-        now_hour = now.hour
-        day_period = "noč" if now_hour < 6 or now_hour >= 20 else "dan"
-        data = {"temp": temp, "feels_like": feels_str, "humidity": humidity, "precip": precip, "uv": uv, "sea_temp": sea_temp, "waves": waves, "wind_speed_kt": wind_kt, "wind_gusts_kt": gusts_kt, "wind_dir_str": wind_dir_str, "hour": now_hour, "day_period": day_period}
+        wdir = directions[int((c.get("wind_direction_10m", 0) + 11.25) / 22.5) % 16] if c.get("wind_direction_10m") is not None else "N"
+        
+        sea_temp = marine.get("current", {}).get("sea_surface_temperature", "N/A") if marine else "N/A"
+        wave_val = marine.get("hourly", {}).get("wave_height", [None])[0] if marine else None
+        waves = round(wave_val, 1) if wave_val is not None else "N/A"
 
-        st.markdown(f'<div class="update-time">⏱️ {t["updated"]}: {now.strftime("%d.%m.%Y %H:%M")}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="countdown">🔄 {t["next_refresh"]} {next_refresh}</div>', unsafe_allow_html=True)
+        data = {"temp": c.get("temperature_2m"), "feels_like": feels_str, "humidity": c.get("relative_humidity_2m"), "precip": c.get("precipitation", 0), "uv": c.get("uv_index"), "sea_temp": sea_temp, "waves": waves, "wind_speed_kt": wind_kt, "wind_gusts_kt": gusts_kt, "wind_dir_str": wdir, "hour": now.hour, "day_period": "noč" if now.hour < 6 or now.hour >= 20 else "dan"}
+
+        trenutni_t = TEXTS.get(izbran_jezik, TEXTS["sl"])
+
+        st.markdown(f'<div class="update-time">⏱️ {trenutni_t["updated"]}: {now.strftime("%d.%m.%Y %H:%M")} | 🔄 {trenutni_t["next_refresh"]} {(now + timedelta(minutes=15)).strftime("%H:%M")}</div>', unsafe_allow_html=True)
+        
         cols = st.columns(4)
-        with cols[0]:
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["temp_label"]}</div><div class="metric-value">{temp}°C{feels_str}</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["humidity_label"]}</div><div class="metric-value">{humidity}%</div></div>', unsafe_allow_html=True)
-        with cols[1]:
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["precip_label"]}</div><div class="metric-value">{precip} mm</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["uv_label"]}</div><div class="metric-value">{uv}</div></div>', unsafe_allow_html=True)
-        with cols[2]:
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["sea_temp_label"]}</div><div class="metric-value">{sea_temp}°C</div></div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["waves_label"]}</div><div class="metric-value">~{waves} m</div></div>', unsafe_allow_html=True)
-        with cols[3]:
-            gust_text = f"<br><small>({t['wind_gusts_prefix']} {gusts_kt} kt)</small>" if gusts_kt != "N/A" and gusts_kt > wind_kt + 2 else ""
-            st.markdown(f'<div class="metric-box"><div class="metric-label">{t["wind_label"]}</div><div class="metric-value">{wind_kt} kt {wind_dir_str}{gust_text}</div></div>', unsafe_allow_html=True)
+        cols[0].markdown(f'<div class="metric-box"><div class="metric-label">{trenutni_t["temp_label"]}</div><div class="metric-value">{data["temp"]}°C{feels_str}</div></div><div class="metric-box"><div class="metric-label">{trenutni_t["humidity_label"]}</div><div class="metric-value">{data["humidity"]}%</div></div>', unsafe_allow_html=True)
+        cols[1].markdown(f'<div class="metric-box"><div class="metric-label">{trenutni_t["precip_label"]}</div><div class="metric-value">{data["precip"]} mm</div></div><div class="metric-box"><div class="metric-label">{trenutni_t["uv_label"]}</div><div class="metric-value">{data["uv"]}</div></div>', unsafe_allow_html=True)
+        cols[2].markdown(f'<div class="metric-box"><div class="metric-label">{trenutni_t["sea_temp_label"]}</div><div class="metric-value">{sea_temp}°C</div></div><div class="metric-box"><div class="metric-label">{trenutni_t["waves_label"]}</div><div class="metric-value">~{waves} m</div></div>', unsafe_allow_html=True)
+        
+        gust_text = f"<br><small>({trenutni_t['wind_gusts_prefix']} {gusts_kt} kt)</small>" if gusts_kt != "N/A" and gusts_kt > wind_kt + 2 else ""
+        cols[3].markdown(f'<div class="metric-box"><div class="metric-label">{trenutni_t["wind_label"]}</div><div class="metric-value">{wind_kt} kt {wdir}{gust_text}</div></div>', unsafe_allow_html=True)
+            
         alerts = []
         if gusts_kt != "N/A" and gusts_kt > 25: alerts.append(f"Močni sunki vetra ({gusts_kt} kt)")
         if waves != "N/A" and waves > 1.2: alerts.append(f"Visoki valovi ({waves} m)")
-        if alerts:
-            st.markdown(f'<div class="alert-box" style="background:#fee2e2;padding:12px;border-radius:10px;text-align:center;font-weight:600;color:#991b1b;">⚠️ {" • ".join(alerts)}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="ok-box" style="background:#dcfce7;padding:12px;border-radius:10px;text-align:center;font-weight:600;color:#166534;">✅ {t["no_alert"]}</div>', unsafe_allow_html=True)
+        
+        if alerts: st.markdown(f'<div style="background:#fee2e2;padding:12px;border-radius:10px;text-align:center;font-weight:600;color:#991b1b;">⚠️ {" • ".join(alerts)}</div>', unsafe_allow_html=True)
+        else: st.markdown(f'<div style="background:#dcfce7;padding:12px;border-radius:10px;text-align:center;font-weight:600;color:#166534;">✅ {trenutni_t["no_alert"]}</div>', unsafe_allow_html=True)
+            
         with st.spinner("Kapitan razmišlja... 🌊"):
-            napoved = generate_forecast(data, lang)
-            st.markdown(f'<div class="forecast-box">🧭 <b>{t["forecast_title"]}</b><br><br>{napoved}</div>', unsafe_allow_html=True)
-    else:
-        st.error("Napaka pri pridobivanju podatkov.")
+            st.markdown(f'<div class="forecast-box">🧭 <b>{trenutni_t["forecast_title"]}</b><br><br>{generate_forecast(data, izbran_jezik)}</div>', unsafe_allow_html=True)
+    else: st.error("Napaka pri pridobivanju podatkov.")
 
-prikazi_vreme()
+# ST.EMPTY FRAGMENT
+vsebnik_vreme = st.empty()
+@st.fragment(run_every=900)
+def prikazi_vreme_vsebnik(trenutni_jezik):
+    with vsebnik_vreme.container(): 
+        prikazi_vreme(trenutni_jezik)
+
+prikazi_vreme_vsebnik(st.session_state.lang)
