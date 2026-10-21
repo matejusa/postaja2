@@ -65,7 +65,7 @@ Schreibe eine sehr kurze Wettervorhersage im Kapitänsstil für die nächsten 12
 }
 PROMPT_VERSION = 3  # ob spremembi pozivov povečaj, da se stare predpomnjene napovedi ne uporabijo
 
-# Omejitev vključuje tudi "razmišljanje" modela, zato je precej nad dolžino samega odgovora.
+# Varnostna meja; odgovor brez razmišljanja ima običajno 150-300 žetonov.
 MAX_TOKENS = 1500
 ANSWER_TIMEOUT = 45  # sekund za celoten klic modela; pod nginx mejo 60 s, da napako sporoči aplikacija, ne 504
 
@@ -110,12 +110,18 @@ async def _ask_openrouter(model: str, system: str, user: str) -> str:
             "model": model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "temperature": 0.75, "max_tokens": MAX_TOKENS,
-            # Modeli z razmišljanjem naj ga ne razvlečejo; ostali modeli parameter prezrejo.
-            "reasoning": {"effort": "low"},
+            # Brez razmišljanja: z njim je DeepSeek V4 Flash oktobra 2026 odgovarjal 5-15 s, včasih več kot
+            # 45 s, in pri približno vsakem petem klicu porabil vse žetone za razmišljanje (prazen odgovor).
+            # Brez njega odgovori v nekaj sekundah. Modeli brez razmišljanja parameter prezrejo.
+            "reasoning": {"enabled": False},
         },
     )
     resp.raise_for_status()
-    return (resp.json()["choices"][0]["message"]["content"] or "").strip()
+    choice = resp.json()["choices"][0]
+    if choice.get("finish_reason") == "length":
+        log.warning("Model %s je dosegel omejitev dolžine; odrezanega odgovora ne prikažemo", model)
+        return ""
+    return (choice["message"].get("content") or "").strip()
 
 
 async def _ask_gemini(model: str, system: str, user: str) -> str:

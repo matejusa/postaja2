@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 
-VERSION = "2026.10.10"
+VERSION = "2026.10.21"
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 

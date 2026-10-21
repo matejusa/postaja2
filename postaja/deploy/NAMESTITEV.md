@@ -1,6 +1,6 @@
 # Vremenska postaja (FastAPI) – podatki za namestitev na Neoserv
 
-Različica: **2026.10.10** · paket: `postaja-2026.10.10.tar.gz` (SHA-256 je v datoteki `.sha256` ob paketu)
+Različica: **2026.10.21** · paket: `postaja-2026.10.21.tar.gz` (SHA-256 je v datoteki `.sha256` ob paketu)
 
 Prvi del odgovarja na osem vprašanj seje za strežnik, drugi del so predlagani koraki.
 
@@ -62,7 +62,7 @@ Bere se `/var/www/vreme.vzemi.si/.env` (z `python-dotenv`; `EnvironmentFile` v s
 curl -s http://127.0.0.1:8503/health
 ```
 
-Pričakovano: `{"status":"ok","version":"2026.10.10"}`. Pot ne kliče zunanjih storitev. Polnejši preizkus je v koraku 5.
+Pričakovano: `{"status":"ok","version":"2026.10.21"}`. Pot ne kliče zunanjih storitev. Polnejši preizkus je v koraku 5.
 
 ### 7. Zamenjava
 
@@ -82,8 +82,8 @@ Strinjam se s predlogom: nova aplikacija najprej na svojih vratih, dokazljivo de
 Paket in `.sha256` se preneseta v `/tmp` na strežniku, nato:
 
 ```bash
-cd /tmp && sha256sum -c postaja-2026.10.10.tar.gz.sha256
-sudo tar -xzf /tmp/postaja-2026.10.10.tar.gz -C /var/www/vreme.vzemi.si
+cd /tmp && sha256sum -c postaja-2026.10.21.tar.gz.sha256
+sudo tar -xzf /tmp/postaja-2026.10.21.tar.gz -C /var/www/vreme.vzemi.si
 sudo chown -R www-data:www-data /var/www/vreme.vzemi.si/postaja
 ```
 
