@@ -1,6 +1,8 @@
 .env
 __pycache__/
-pages/.forecast_cache/
 .forecast_cache/
 venv/
 izdaje/
+# Nastavitve admin konzole živijo na strežniku, ne v kodi.
+admin_config.json
+.claude/

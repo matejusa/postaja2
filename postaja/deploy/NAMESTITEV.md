@@ -9,7 +9,7 @@ Prvi del odgovarja na osem vprašanj seje za strežnik, drugi del so predlagani 
 ### 1. Koda
 
 - Dostava je **tar paket**, ne git. Paket vsebuje samo mapo `postaja/` (Python koda, predloge, statika, ta navodila). Na strežniku ni `git clone`, `pull`, `reset` ali `checkout`.
-- Koda je v gitu (veja `fastapi`), na strežnik pa gre kot paket; istovetnost paketa zagotavlja SHA-256.
+- Koda je v gitu (veja `main`), na strežnik pa gre kot paket; istovetnost paketa zagotavlja SHA-256.
 - Vsebina: popolna zamenjava Streamlit aplikacije. Tri strani (`/trenutno`, `/napoved`, `/lokacija`), admin konzola (`/admin`), kapitanova AI napoved, graf brez zunanjih knjižnic.
 - Zrelost: lastnik je aplikacijo preizkusil lokalno (Windows, Python 3.14). Na Pythonu 3.12 ni bila zagnana; preverjena je le skladnja. Prvi pravi preizkus na 3.12 je korak 5 spodaj.
 - Primerjava s stanjem strežnika (varnostna kopija 3. 10. 2026): razlike med strežnikom in GitHubom so obvoznice za piškotke (`time.sleep`, `set_cookies_on_arrival`, `return_page`, `peskovnik.py`), prevodi imen držav pri iskanju in `.streamlit/config.toml`. Nova aplikacija obvoznic ne potrebuje; vrnitev na isto stran po menjavi jezika in prevedena imena držav ima vgrajena. Iz starih datotek se ne prenaša nič kode.
