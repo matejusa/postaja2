@@ -1,0 +1,2 @@
+# Nova aplikacija teče na Linuxu (systemd, bash): datoteke naj tudi v delovni kopiji na Windows ostanejo z LF.
+postaja/** text=auto eol=lf

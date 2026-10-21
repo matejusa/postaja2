@@ -1,0 +1,24 @@
+# Pripete različice, preizkušene lokalno (vključno s posrednimi odvisnostmi).
+# Neposredne odvisnosti: fastapi, uvicorn, jinja2, httpx, python-multipart, itsdangerous, python-dotenv.
+annotated-doc==0.0.5
+annotated-types==0.7.0
+anyio==4.13.0
+certifi==2026.5.20
+click==8.4.1
+fastapi==0.142.2
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.18
+itsdangerous==2.2.0
+jinja2==3.1.6
+markupsafe==3.0.3
+opentelemetry-api==1.45.0
+pydantic==2.13.4
+pydantic-core==2.46.4
+python-dotenv==1.2.2
+python-multipart==0.0.32
+starlette==1.3.0
+typing-extensions==4.15.0
+typing-inspection==0.4.2
+uvicorn==0.49.0

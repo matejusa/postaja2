@@ -1,4 +1,6 @@
 .env
 __pycache__/
 pages/.forecast_cache/
+.forecast_cache/
 venv/
+izdaje/

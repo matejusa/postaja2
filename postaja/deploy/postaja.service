@@ -1,0 +1,19 @@
+[Unit]
+Description=Vremenska postaja (FastAPI) - vreme.vzemi.si
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/vreme.vzemi.si
+# En sam proces: predpomnilnik in omejitev AI klicev sta v pomnilniku procesa.
+ExecStart=/var/www/vreme.vzemi.si/venv-postaja/bin/uvicorn postaja.main:app --host 127.0.0.1 --port 8503
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

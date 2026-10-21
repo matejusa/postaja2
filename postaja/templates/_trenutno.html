@@ -1,0 +1,29 @@
+{% macro metric(label, value, sub="") %}
+<div class="metric">
+  <div class="metric-label">{{ label }}</div>
+  <div class="metric-value">{{ value }}</div>
+  {% if sub %}<div class="metric-sub">{{ sub }}</div>{% endif %}
+</div>
+{% endmacro %}
+{% if not data %}
+<div class="alert warn">⚠️ {{ t.error_data }}</div>
+{% else %}
+<p class="updated">⏱️ {{ t.updated }} {{ data.time|stamp }}</p>
+<div class="metrics">
+  {{ metric("🌡️ " ~ t.temp, data.temp ~ " °C",
+            t.feels ~ " " ~ data.feels ~ " °C" if data.feels is not none and (data.feels - data.temp)|abs >= 1 else "") }}
+  {{ metric("🌬️ " ~ t.wind, data.wind_kt ~ " kt " ~ data.wind_dir,
+            t.gusts_to ~ " " ~ data.gusts_kt ~ " kt" if data.gusts_kt is not none and data.gusts_kt > data.wind_kt + 2 else "") }}
+  {{ metric("🌊 " ~ t.waves, "~" ~ data.waves ~ " m" if data.waves is not none else "—") }}
+  {{ metric("🌊 " ~ t.sea_temp, data.sea_temp ~ " °C" if data.sea_temp is not none else "—") }}
+  {{ metric("☔ " ~ t.precip_now, data.precip_hour ~ " mm",
+            t.precip_15 ~ " " ~ data.precip ~ " mm" if data.precip > 0 else "") }}
+  {{ metric("💧 " ~ t.humidity, data.humidity ~ " %") }}
+  {{ metric("☀️ " ~ t.uv, data.uv if data.uv is not none else "—") }}
+</div>
+{% if alerts %}
+<div class="alert {{ level }}">{{ "⚠️" if level == "warn" else "☔" }} {{ alerts|join(" • ") }}</div>
+{% else %}
+<div class="alert ok">✅ {{ t.no_alert }}</div>
+{% endif %}
+{% endif %}

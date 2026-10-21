@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ t.anchor_title }} – {{ t.app_title }}{% endblock %}
+{% block main %}
+<section class="card anchor" id="anchor">
+  <h2>⚓ {{ t.anchor_title }}</h2>
+  <p id="a-status" class="a-status">{{ t.anchor_idle }}</p>
+
+  <div class="a-dist"><span id="a-dist">0</span> <small>m</small></div>
+  <div class="metric-label">{{ t.anchor_distance }}</div>
+  <div class="a-stats">
+    <div><b id="a-time">0:00:00</b><span>{{ t.anchor_time }}</span></div>
+    <div><b id="a-acc">–</b><span>{{ t.anchor_accuracy }}</span></div>
+    <div><b id="a-max">0 m</b><span>{{ t.anchor_max }}</span></div>
+  </div>
+
+  <svg id="a-plot" viewBox="-100 -100 200 200" role="img"></svg>
+
+  <div class="a-alarm">
+    <label class="a-toggle"><input type="checkbox" id="a-on" checked> 🔔 {{ t.anchor_alarm }}</label>
+    <button id="a-minus" aria-label="−5 m">−</button>
+    <span><b id="a-radius">40</b> m</span>
+    <button id="a-plus" aria-label="+5 m">+</button>
+    <button id="a-test">{{ t.anchor_test }}</button>
+  </div>
+
+  <button id="a-start" class="primary wide big">⚓ {{ t.anchor_start }}</button>
+  <button id="a-stop" class="wide big" hidden>⏹ {{ t.anchor_stop }}</button>
+
+  <p id="a-hint" class="alert note" hidden>🔇 {{ t.anchor_sound_hint }}</p>
+  <p id="a-wake" class="muted small"></p>
+  <p class="muted small">{{ t.anchor_note }}</p>
+</section>
+
+<div id="a-overlay" class="a-overlay" hidden>
+  <div>⚠️ {{ t.anchor_alarm_text }}</div>
+  <b id="a-overlay-dist"></b>
+  <button id="a-mute">🔕 {{ t.anchor_mute }}</button>
+</div>
+<script id="anchor-texts" type="application/json">{{ texts|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="/static/sidro.js?v={{ VERSION }}" defer></script>{% endblock %}

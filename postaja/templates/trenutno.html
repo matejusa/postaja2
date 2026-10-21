@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ prefs.loc }} – {{ t.app_title }}{% endblock %}
+{% block main %}
+<div data-src="/partials/trenutno" data-every="900" data-loaded>{% include "_trenutno.html" %}</div>
+<section class="card captain">
+  <h2>🧭 {{ t.captain_title }}</h2>
+  <div data-src="/partials/kapitan" data-every="900" data-fail="{{ t.captain_error }}"><p class="muted thinking">{{ t.captain_thinking }} 🌊</p></div>
+</section>
+{% endblock %}

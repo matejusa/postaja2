@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="card narrow">
+  <h1>🌊 {{ t.app_title }}</h1>
+  <form class="search" method="get" action="/lokacija">
+    <label for="q">📍 {{ t.loc_title }}</label>
+    <div class="row">
+      <input id="q" name="q" value="{{ q }}" placeholder="{{ t.loc_placeholder }}" minlength="3" required autofocus autocomplete="off">
+      <button class="primary">🔍 {{ t.loc_search }}</button>
+    </div>
+  </form>
+  <div id="loc-results">{% include "_lokacije.html" %}</div>
+</section>
+{% endblock %}

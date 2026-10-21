@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ prefs.loc }} – {{ t.tide_title }}{% endblock %}
+{% block main %}
+{% if not tide %}
+<div class="alert note">{{ t.tide_none }}</div>
+{% else %}
+<section class="card chart-card">
+  <h2>🌊 {{ t.tide_title }}</h2>
+  <div class="chart-scroll"><div id="tide" class="chart"></div></div>
+  <div class="legend">
+    <span><i class="lg lg-level"></i>{{ t.tide_level }}</span>
+    <span><i class="lg lg-astro"></i>{{ t.tide_astro }}</span>
+    <span><i class="lg lg-up"></i>{{ t.tide_higher }}</span>
+    <span><i class="lg lg-down"></i>{{ t.tide_lower }}</span>
+    {% if tide.wind %}
+    <span><i class="lg lg-jugo"></i>{{ t.tide_jugo }}</span>
+    <span><i class="lg lg-burja"></i>{{ t.tide_burja }}</span>
+    {% endif %}
+  </div>
+  <p class="muted small">{{ t.tide_note }}{% if tide.wind %} {{ t.tide_wind_note }}{% endif %}</p>
+</section>
+<script id="tide-data" type="application/json">{{ tide|tojson }}</script>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/tide.js?v={{ VERSION }}" defer></script>{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block main %}
+<section class="card admin">
+  <div class="row spread">
+    <h1>⚓ Admin konzola</h1>
+    <form method="post" action="/admin/logout"><button>🚪 Odjava</button></form>
+  </div>
+  {% if flash %}<div class="alert {{ 'ok' if flash.startswith('✅') else 'warn' }}">{{ flash }}</div>{% endif %}
+
+  <form method="post" action="/admin/save">
+    <h2>🤖 AI model za Kapitana</h2>
+    <select name="choice">
+      {% if not current %}<option value="" selected>{{ cfg.ai_provider }}: {{ cfg.model }} (ročno nastavljen)</option>{% endif %}
+      {% for label in choices %}
+      <option value="{{ label }}"{% if label == current %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <h2>📝 Kapitanovi prompti</h2>
+    <p class="muted">System prompt določa osebnost in obnašanje Kapitana. <code>{loc}</code> se zamenja z imenom kraja.</p>
+    {% for code, label in LANGS.items() %}
+    <label for="prompt_{{ code }}">Prompt za: {{ label }}</label>
+    <textarea id="prompt_{{ code }}" name="prompt_{{ code }}" rows="5">{{ cfg.prompts[code] }}</textarea>
+    {% endfor %}
+    <button class="primary wide">💾 Shrani vse nastavitve</button>
+  </form>
+
+  <h2>🔌 Stanje API povezav</h2>
+  <form class="row" method="post" action="/admin/test">
+    <button name="what" value="meteo">Testiraj Open-Meteo</button>
+    <button name="what" value="ai">Testiraj trenutnega AI ponudnika</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% if searched and not results %}<p class="muted">{{ t.loc_none }}</p>{% endif %}
+<h2>{{ t.loc_pick if results else t.loc_suggestions }}</h2>
+{% for loc in results or suggestions %}
+<form method="post" action="/lokacija">
+  <input type="hidden" name="lat" value="{{ loc.lat }}">
+  <input type="hidden" name="lon" value="{{ loc.lon }}">
+  <input type="hidden" name="display" value="{{ loc.display }}">
+  <button class="pick"{% if results %} data-hit{% endif %}>{{ loc.display }}{% if loc.detail %} <small class="muted">{{ loc.detail }}</small>{% endif %}</button>
+</form>
+{% endfor %}

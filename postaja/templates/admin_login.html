@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block main %}
+<section class="card narrow">
+  <h1>🔒 Vstop zaklenjen</h1>
+  {% if flash %}<div class="alert warn">{{ flash }}</div>{% endif %}
+  {% if not enabled %}
+  <p class="muted">Admin konzola je onemogočena: v <code>.env</code> nastavi <code>ADMIN_PASSWORD</code> in ponovno zaženi aplikacijo.</p>
+  {% else %}
+  <form class="search" method="post" action="/admin/login">
+    <label for="password">Vnesi admin geslo:</label>
+    <div class="row">
+      <input id="password" name="password" type="password" required autofocus autocomplete="current-password">
+      <button class="primary">Prijava</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

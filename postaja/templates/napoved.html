@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ prefs.loc }} – {{ t.forecast_title }}{% endblock %}
+{% block main %}
+{% if not days %}
+<div class="alert warn">⚠️ {{ t.error_data }}</div>
+{% else %}
+<section class="card chart-card">
+  <div class="chart-scroll"><div id="chart" class="chart"></div></div>
+  <div class="legend">
+    <span><i class="lg lg-temp"></i>{{ t.chart_temp }}</span>
+    <span><i class="lg lg-gust"></i>{{ t.chart_gusts }}</span>
+    <span><i class="lg lg-rain"></i>{{ t.chart_rain }}</span>
+  </div>
+</section>
+<script id="chart-data" type="application/json">{{ chart|tojson }}</script>
+
+<h2>📋 {{ t.hourly_title }}</h2>
+{% for day in days %}
+{% set full = loop.index0 < 3 %}
+<details class="card day" open>
+  <summary>
+    <span class="day-name">{{ t.days_full[day.weekday] }} {{ day.label }}</span>
+    <span class="day-sum">
+      <span>{{ day.icon }} <b class="{{ day.tmax|temp_class }}">{{ day.tmax|deg }}</b> / {{ day.tmin|deg }}</span>
+      <span>☔ {{ day.precip|round(1) }} mm</span>
+      <span>💨 {{ day.gusts_kt if day.gusts_kt is not none else "—" }} kt</span>
+      <span>UV {{ day.uv|round|int if day.uv is not none else "—" }}</span>
+    </span>
+  </summary>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>{{ t.h_hour }}</th><th></th><th>{{ t.h_temp }}</th><th>{{ t.h_precip }}</th><th>{{ t.h_wind }}</th></tr></thead>
+      <tbody>
+        {% for h in day.hours if full or h.hour % 6 == 0 %}
+        <tr{% if h.night %} class="night"{% endif %}>
+          <td>{{ "%02d"|format(h.hour) }}:00</td>
+          <td class="icon">{{ h.icon }}</td>
+          <td class="temp {{ h.temp|temp_class }}">{{ h.temp }}°</td>
+          <td>{% if h.precip > 0 %}{{ h.precip }} mm{% else %}–{% endif %}{% if h.prob is not none %} <span class="muted">({{ h.prob }}%)</span>{% endif %}</td>
+          <td>{% if h.deg is not none %}<span class="arrow" style="transform:rotate({{ h.deg + 180 }}deg)">↑</span>{% endif %} {{ h.wind_kt }} / {{ h.gusts_kt }} kt {{ h.dir }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% endfor %}
+<p class="muted center">🔄 {{ t.forecast_note }}</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="/static/chart.js?v={{ VERSION }}" defer></script>{% endblock %}

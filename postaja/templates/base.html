@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="{{ prefs.lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ t.app_title }}{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌊</text></svg>">
+  <link rel="stylesheet" href="/static/style.css?v={{ VERSION }}">
+  <script>
+    // Po potegu s prstom nova stran pridrsi iz smeri potega (smer zapiše app.js tik pred preklopom).
+    addEventListener("pagereveal", (e) => {
+      let dir = null;
+      try { dir = sessionStorage.getItem("swipe"); sessionStorage.removeItem("swipe"); } catch (_) {}
+      if (dir && e.viewTransition) e.viewTransition.types.add(dir);
+    });
+  </script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/">🌊 <span>{{ prefs.loc or t.app_title }}</span></a>
+    <form class="langs" method="post" action="/jezik">
+      <input type="hidden" name="next" value="{{ request.url.path }}">
+      {% for code, label in LANGS.items() -%}
+      <button name="lang" value="{{ code }}"{% if code == prefs.lang %} class="active" aria-current="true"{% endif %}>{{ label }}</button>
+      {%- endfor %}
+    </form>
+  </header>
+  {% if prefs.has_location %}
+  {% set path = request.url.path %}
+  <nav class="tabs">
+    <a href="/trenutno" data-swipe{% if path == "/trenutno" %} class="active"{% endif %}>{{ t.tab_current }}</a>
+    <a href="/napoved" data-swipe{% if path == "/napoved" %} class="active"{% endif %}>{{ t.tab_forecast }}</a>
+    {% if has_tide %}
+    <a href="/plima" data-swipe{% if path == "/plima" %} class="active"{% endif %}>{{ t.tab_tide }}</a>
+    <a href="/sidro" data-swipe{% if path == "/sidro" %} class="active"{% endif %}>{{ t.tab_anchor }}</a>
+    {% endif %}
+    <a href="/lokacija"{% if path == "/lokacija" %} class="active"{% endif %}>📍 {{ t.change_location }}</a>
+  </nav>
+  {% endif %}
+  <main>{% block main %}{% endblock %}</main>
+  <footer>{{ t.source }} · {{ t.app_title }}</footer>
+  <script src="/static/app.js?v={{ VERSION }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
